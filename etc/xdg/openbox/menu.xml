@@ -15,6 +15,9 @@
   <item label="emacs">
     <action name="Execute"><execute>/usr/local/bin/emacs</execute></action>
   </item>
+  <item label="gvim">
+    <action name="Execute"><execute>/usr/bin/gvim</execute></action>
+  </item>
   <separator />
 </menu>
 
