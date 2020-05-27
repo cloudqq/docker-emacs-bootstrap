@@ -173,8 +173,8 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV emacs_runtime_depends="libtiff5 libpng16-16 libgif7 libsm6 libasound2 libxpm4 xaw3dg  libxrender1 \
 librsvg2-2 libdbus-1-3  libxrandr2 libxinerama1 libxfixes3 libgpm2 libotf0 libm17n-0 liblcms2-2 libjansson4 fonts-wqy-zenhei fonts-wqy-microhei ttf-wqy-microhei ttf-wqy-zenhei"
 ENV rime_runtime_depends="libyaml-cpp0.5v5 libleveldb1v5 libmarisa0 libboost-regex1.65.1 libboost-system1.65 libgoogle-glog0v5 libboost-filesystem1.65.1"
-ENV utils_depends="sudo curl wget git gnupg tmux"
-ENV extra_x2go="openbox obconf  conky nitrogen rxvt-unicode-256color apt-utils vim xterm pulseaudio cups curl openssh-server x11-xserver-utils locales"
+ENV utils_depends="sudo curl wget git gnupg tmux "
+ENV extra_x2go="openbox obconf  conky nitrogen rxvt-unicode-256color apt-utils vim vim-gtk3 xterm pulseaudio cups curl openssh-server x11-xserver-utils locales"
 
 # emacs runtime
 RUN apt-get update && apt-get -y install ${utils_depends} \
