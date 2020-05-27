@@ -1,0 +1,96 @@
+#!/bin/bash
+
+## Create(if needed) this user and run command as the user:
+# ENV UNAME="emacser" \
+#     GNAME="emacs" \
+#     UHOME="/home/emacs" \
+#     UID="1000" \
+#     GID="1000" \
+#     WORKSPACE="/mnt/workspace" \
+#     SHELL="/bin/bash"
+## NOTE: ^^^^ Those are default values only in docker-emacs
+## NOTE: The user will have "no password" sudo privilege
+
+## Create user if it doesn't exists
+if ! id "${UNAME}" >/dev/null 2>&1; then
+	## Prepend the user to /etc/passwd to ensure that it will
+	## override already existing users with the same IDs
+	echo -e "${UNAME}:x:${UID}:${GID}:${UNAME},,,:${UHOME}:${SHELL}\n$(cat /etc/passwd)" > /etc/passwd
+	echo "${UNAME}::17032:0:99999:7:::" >> /etc/shadow
+
+fi
+
+## Make sure that user is sudoer
+if [ ! -f "/etc/sudoers.d/${UNAME}" ]; then
+	echo "${UNAME} ALL=(ALL) NOPASSWD: ALL" > "/etc/sudoers.d/${UNAME}"
+	echo "Defaults:worker   !requiretty" "/etc/sudoers.d/${UNAME}"
+	chmod 0440 "/etc/sudoers.d/${UNAME}"
+fi
+
+## Create user's group if it doesn't exists
+u_group=$(egrep -i "^${GNAME}" /etc/group)
+if [ $? -ne 0 ]; then
+	echo "${GNAME}:x:${GID}:${UNAME}" >> /etc/group
+elif [[ ${u_group} != *"${UNAME}"* ]]; then
+	sed -i -e "s/${u_group}/${u_group},${UNAME}/g" /etc/group
+fi
+
+
+
+## Make sure that the user owns home directory
+if [ -d "${UHOME}" ]
+then
+	home_owner="$(stat -c '%U' ${UHOME})"
+	if ! id "${home_owner}" >/dev/null 2>&1 || [ "$(id -u ${UNAME})" -ne "$(id -u ${home_owner})" ]; then
+		chown "${UID}":"${GID}" -R ${UHOME}
+	fi
+else
+	mkdir -p "${UHOME}/.ssh"
+	chown -R "${UID}":"${GID}" "${UHOME}"
+
+	KEYGEN=/usr/bin/ssh-keygen
+	KEYFILE=${UHOME}/.ssh/id_rsa
+
+	if [ ! -f $KEYFILE ]; then
+	    $KEYGEN -q -t rsa -N "" -f $KEYFILE
+	    cat $KEYFILE.pub >> ${UHOME}/.ssh/authorized_keys
+
+	    echo "== Use this private key to log in =="
+	    cat $KEYFILE
+	fi
+fi
+
+if [ -f ${UHOME}/.Xauthority ]; then
+	rm -rf ${UHOME}/.Xauthority
+fi
+
+
+
+## change password
+if [ -z "$PASSWORD" ]; then
+	PASSWORD="$UNAME"
+fi	
+echo "$UNAME:$PASSWORD" | chpasswd
+
+PASSWORD=""
+
+
+mkdir -p "${WORKSPACE}"
+chown "${UID}":"${GID}" "${WORKSPACE}"
+cd "${WORKSPACE}"
+
+if [ ! -d "/run/sshd" ];then
+	mkdir -p /run/sshd
+fi
+
+
+
+/usr/sbin/sshd -D
+
+su-exec "${UNAME}" "$@"
+
+# Create ssh "client" key
+# http://stackoverflow.com/a/20977657
+
+
+
